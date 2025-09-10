@@ -20,13 +20,13 @@ async function initDB() {
 
     // 2️⃣ Create pool WITH the DB
     pool = mysql.createPool({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: DB_NAME,
+      host: process.env.DB_HOST || "localhost",
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "",
+      database: process.env.DB_NAME || DB_NAME,
       waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
+      connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 10,
+      queueLimit: parseInt(process.env.DB_QUEUE_LIMIT) || 0,
     });
 
     // 3️⃣ Ensure tables exist

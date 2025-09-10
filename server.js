@@ -3,11 +3,8 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const { initDB } = require("./config/dbConfig");
 const logger = require("./logger");
-require('dotenv').config()
+require("dotenv").config();
 const cors = require("cors");
-
-
-
 
 const app = express();
 app.use(bodyParser.json());
@@ -27,6 +24,8 @@ app.use(
     },
   })
 );
+
+app.get("/", (req, res) => res.send("OK"));
 
 // Routes
 const userRoutes = require("./routes/users.routes");
