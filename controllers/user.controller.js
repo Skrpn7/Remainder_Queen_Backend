@@ -1,6 +1,6 @@
 const User = require("../models/users.model");
 const logger = require("../logger");
-const ApiResponse = require("../utils/ApiResponse");
+const ApiResponse = require("../utils/apiResponse");
 
 // Create new user
 exports.createUser = async (req, res) => {

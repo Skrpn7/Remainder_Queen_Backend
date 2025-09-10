@@ -1,5 +1,5 @@
 const Task = require("../models/task.model");
-const ApiResponse = require("../utils/ApiResponse");
+const ApiResponse = require("../utils/apiResponse");
 const logger = require("../logger");
 
 // Create Task

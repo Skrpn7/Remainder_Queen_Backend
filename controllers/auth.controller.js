@@ -1,7 +1,7 @@
 const speakeasy = require("speakeasy");
 const jwt = require("jsonwebtoken");
 const Users = require("../models/users.model");
-const ApiResponse = require("../utils/ApiResponse"); // ✅ import the template class
+const ApiResponse = require("../utils/apiResponse"); // ✅ import the template class
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const OTP_SECRET = process.env.OTP_SECRET;
