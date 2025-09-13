@@ -7,16 +7,28 @@ let pool;
 async function initDB() {
   try {
     // 1️⃣ Connect without specifying DB (to check/create DB)
-    const connection = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-    });
+    // const connection = await mysql.createConnection({
+    //   host: "localhost",
+    //   user: "root",
+    //   password: "",
+    // });
 
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\``);
-    console.log(`✅ Database '${DB_NAME}' ready.`);
+    // await connection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\``);
+    // console.log(`✅ Database '${DB_NAME}' ready.`);
 
-    await connection.end();
+    // await connection.end();
+
+    if (process.env.NODE_ENV !== "production") {
+      const connection = await mysql.createConnection({
+        host: process.env.DB_HOST || "localhost",
+        user: process.env.DB_USER || "root",
+        password: process.env.DB_PASSWORD || "",
+      });
+
+      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\``);
+      console.log(`✅ Database '${DB_NAME}' ready (local).`);
+      await connection.end();
+    }
 
     // 2️⃣ Create pool WITH the DB
     pool = mysql.createPool({
@@ -41,21 +53,22 @@ async function initDB() {
     );
     `);
 
-    await pool.query(`CREATE TABLE IF NOT EXISTS Task (
+    await pool.query(`
+  CREATE TABLE IF NOT EXISTS task (
     id INT AUTO_INCREMENT PRIMARY KEY,
     Title VARCHAR(255) NOT NULL,
     Description TEXT,
     Status ENUM('Todo', 'Completed','Rejected') DEFAULT 'Todo',
 
-    Assignee VARCHAR(15),   -- FK referencing Users.phoneno
-    AssignTo VARCHAR(15),   -- FK referencing Users.phoneno
+    Assignee VARCHAR(15),
+    AssignTo VARCHAR(15),
 
     CreatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UpdatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_task_assignee FOREIGN KEY (Assignee) REFERENCES Users(phoneno) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_task_assignto FOREIGN KEY (AssignTo) REFERENCES Users(phoneno) ON DELETE SET NULL ON UPDATE CASCADE
-);
+    CONSTRAINT fk_task_assignee FOREIGN KEY (Assignee) REFERENCES users(phoneno) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_task_assignto FOREIGN KEY (AssignTo) REFERENCES users(phoneno) ON DELETE SET NULL ON UPDATE CASCADE
+  );
 `);
 
     console.log("✅ Users table ready.");
