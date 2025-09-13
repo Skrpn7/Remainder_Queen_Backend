@@ -6,7 +6,7 @@ class Task {
     try {
       const db = getDB();
       const [result] = await db.execute(
-        `INSERT INTO Task (Title, Description, Status, Assignee, AssignTo)
+        `INSERT INTO task (Title, Description, Status, Assignee, AssignTo)
          VALUES (?, ?, ?, ?, ?)`,
         [title, description, status, assignee, assignTo]
       );
@@ -31,7 +31,7 @@ class Task {
       const db = getDB();
       let query = `
       SELECT * 
-      FROM Task
+      FROM task
       WHERE (Assignee = ? OR AssignTo = ?)
     `;
       const params = [userPhone, userPhone];
@@ -55,7 +55,7 @@ class Task {
   static async getTaskById(id) {
     try {
       const db = getDB();
-      const [rows] = await db.execute(`SELECT * FROM Task WHERE id = ?`, [id]);
+      const [rows] = await db.execute(`SELECT * FROM task WHERE id = ?`, [id]);
       return rows[0] || null;
     } catch (error) {
       logger.error(`Error fetching task by ID: ${error.message}`);
@@ -66,7 +66,7 @@ class Task {
   static async getTasksForUser(userPhone) {
     const query = `
       SELECT * 
-      FROM Task
+      FROM task
       WHERE Assignee = ? OR AssignTo = ?
       ORDER BY CreatedOn DESC
     `;
@@ -114,7 +114,7 @@ class Task {
       values.push(id);
 
       const [result] = await db.execute(
-        `UPDATE Task SET ${updateFields.join(", ")} WHERE id = ?`,
+        `UPDATE task SET ${updateFields.join(", ")} WHERE id = ?`,
         values
       );
 
@@ -154,7 +154,7 @@ class Task {
       if (status === "Reverted") {
         // Swap Assignee and AssignTo
         const [swapResult] = await db.execute(
-          `UPDATE Task 
+          `UPDATE task 
          SET UpdatedOn = NOW(),
              Assignee = (@tmp := Assignee),
              Assignee = AssignTo,
@@ -168,7 +168,7 @@ class Task {
         }
       } else {
         const [result] = await db.execute(
-          `UPDATE Task 
+          `UPDATE task 
          SET Status = ?, UpdatedOn = NOW()
          WHERE id = ?`,
           [status, id]
