@@ -2,6 +2,7 @@ const speakeasy = require("speakeasy");
 const jwt = require("jsonwebtoken");
 const Users = require("../models/users.model");
 const ApiResponse = require("../utils/apiResponse"); // ✅ import the template class
+const { default: axios } = require("axios");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const OTP_SECRET = process.env.OTP_SECRET;
@@ -31,6 +32,12 @@ exports.sendOtp = async (req, res) => {
       step: 30,
     });
 
+    const API_KEY = process.env.TWO_FACTOR_API_KEY; // 🔑 store in .env
+    // const message = `Your login OTP is ${otp}. It is valid for 30 seconds.`;
+
+    const url = `https://2factor.in/API/V1/${API_KEY}/SMS/${phoneNo}/${otp}/Otp_template`;
+    const response = await axios.get(url);
+    console.log("2factor:", response.data);
     console.log(`📲 OTP for ${phoneNo}: ${otp}`);
 
     res.status(200).json(
@@ -38,7 +45,7 @@ exports.sendOtp = async (req, res) => {
         {
           message: "OTP sent successfully",
           phoneNo,
-          otp, // ❌ remove in production
+          // otp, // ❌ remove in production
         },
         1
       )
