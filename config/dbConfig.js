@@ -48,6 +48,7 @@ async function initDB() {
     phoneno VARCHAR(20) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
     type VARCHAR(50),
+    push_token TEXT,
     created_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );

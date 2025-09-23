@@ -34,6 +34,8 @@ const authRoutes = require("./routes/auth.routes");
 app.use("/api/v1/auth", authRoutes);
 const taskRoutes = require("./routes/task.routes");
 app.use("/api/v1/task", taskRoutes);
+const notificationRoutes = require("./routes/notification.routes");
+app.use("/api/v1/notifications", notificationRoutes);
 // Routes
 
 const PORT = process.env.PORT || 5000;
