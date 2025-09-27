@@ -29,6 +29,8 @@ exports.createTask = async (req, res) => {
     try {
       const assigneePushToken = await Users.getUserPushToken(assignTo);
       const assignerUser = await Users.getUserByPhone(assignee);
+      console.log(`Assigner user: ${JSON.stringify(assignerUser)}`);
+      console.log(`Assignee push token: ${assigneePushToken}`);
 
       if (assigneePushToken && assignerUser) {
         await NotificationService.sendTaskAssignmentNotification(
@@ -38,12 +40,16 @@ exports.createTask = async (req, res) => {
           task.id
         );
         logger.info(`Task assignment notification sent to ${assignTo}`);
+        console.log(`Task assignment notification sent to ${assignTo}`);
       }
     } catch (notificationError) {
       logger.error(
         `Error sending task assignment notification: ${notificationError.message}`
       );
       // Don't fail the task creation if notification fails
+      console.log(
+        `Error sending task assignment notification: ${notificationError.message}`
+      );
     }
 
     logger.info(`Task created: ${task.title}`);
