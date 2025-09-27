@@ -65,6 +65,7 @@ exports.removeRefreshToken = async (refreshToken) => {
     "UPDATE users SET refresh_token = NULL WHERE refresh_token = ?",
     [refreshToken]
   );
+};
 // Update user push token
 exports.updateUserPushToken = async (phoneno, pushToken) => {
   const db = getDB();
