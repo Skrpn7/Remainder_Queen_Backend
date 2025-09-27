@@ -1,4 +1,6 @@
 const Task = require("../models/task.model");
+const Users = require("../models/users.model");
+const NotificationService = require("../services/notificationService");
 const ApiResponse = require("../utils/apiResponse");
 const logger = require("../logger");
 
@@ -22,6 +24,27 @@ exports.createTask = async (req, res) => {
       assignee,
       assignTo
     );
+
+    // Send push notification to assignee
+    try {
+      const assigneePushToken = await Users.getUserPushToken(assignTo);
+      const assignerUser = await Users.getUserByPhone(assignee);
+
+      if (assigneePushToken && assignerUser) {
+        await NotificationService.sendTaskAssignmentNotification(
+          assigneePushToken,
+          assignerUser.name || assignee,
+          title,
+          task.id
+        );
+        logger.info(`Task assignment notification sent to ${assignTo}`);
+      }
+    } catch (notificationError) {
+      logger.error(
+        `Error sending task assignment notification: ${notificationError.message}`
+      );
+      // Don't fail the task creation if notification fails
+    }
 
     logger.info(`Task created: ${task.title}`);
     res.status(201).json(ApiResponse.success(task, 1, 201));
@@ -190,6 +213,52 @@ exports.updateTaskStatus = async (req, res) => {
     }
 
     const updatedTask = await Task.updateTaskStatus(parseInt(id), status);
+
+    // Send push notification to task creator
+    try {
+      const assignerPushToken = await Users.getUserPushToken(
+        existingTask.Assignee
+      );
+      const assigneeUser = await Users.getUserByPhone(updatedBy);
+
+      if (
+        assignerPushToken &&
+        assigneeUser &&
+        existingTask.Assignee !== updatedBy
+      ) {
+        if (status === "Completed") {
+          await NotificationService.sendTaskCompletionNotification(
+            assignerPushToken,
+            assigneeUser.name || updatedBy,
+            existingTask.Title,
+            parseInt(id)
+          );
+        } else if (status === "Rejected") {
+          await NotificationService.sendTaskRejectionNotification(
+            assignerPushToken,
+            assigneeUser.name || updatedBy,
+            existingTask.Title,
+            parseInt(id)
+          );
+        } else {
+          await NotificationService.sendTaskStatusUpdateNotification(
+            assignerPushToken,
+            assigneeUser.name || updatedBy,
+            existingTask.Title,
+            status,
+            parseInt(id)
+          );
+        }
+        logger.info(
+          `Task status notification sent to ${existingTask.Assignee}`
+        );
+      }
+    } catch (notificationError) {
+      logger.error(
+        `Error sending task status notification: ${notificationError.message}`
+      );
+      // Don't fail the status update if notification fails
+    }
 
     logger.info(`Task ${id} status updated to ${status} by ${updatedBy}`);
     res.json(ApiResponse.success(updatedTask, 1, 200));

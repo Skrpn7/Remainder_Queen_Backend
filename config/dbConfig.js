@@ -49,6 +49,7 @@ async function initDB() {
     name VARCHAR(100) NOT NULL,
     type VARCHAR(50),
     refresh_token VARCHAR(512),
+    push_token TEXT,
     created_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_on DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
