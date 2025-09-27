@@ -7,6 +7,21 @@ const { default: axios } = require("axios");
 const JWT_SECRET = process.env.JWT_SECRET;
 const OTP_SECRET = process.env.OTP_SECRET;
 
+/**
+ * Generate Access & Refresh Tokens
+ */
+const generateTokens = async (user) => {
+  const payload = {
+    id: user.id,
+    phoneNo: user.phoneno,
+  };
+
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" }); // short lived
+  const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" }); // long lived
+
+  return { accessToken, refreshToken };
+};
+
 exports.sendOtp = async (req, res) => {
   try {
     const { phoneNo } = req.body;
@@ -32,24 +47,27 @@ exports.sendOtp = async (req, res) => {
       step: 30,
     });
 
-    const API_KEY = process.env.TWO_FACTOR_API_KEY; // 🔑 store in .env
+    const API_KEY = process.env.TWO_FACTOR_API_KEY;
     // const message = `Your login OTP is ${otp}. It is valid for 30 seconds.`;
+    if (process.env.NODE_ENV == "production") {
+      const url = `https://2factor.in/API/V1/${API_KEY}/SMS/${phoneNo}/${otp}/Otp_template`;
+      const response = await axios.get(url);
+      console.log("2factor:", response.data);
+      console.log(`📲 OTP for ${phoneNo}: ${otp}`);
+    }
 
-    const url = `https://2factor.in/API/V1/${API_KEY}/SMS/${phoneNo}/${otp}/Otp_template`;
-    const response = await axios.get(url);
-    console.log("2factor:", response.data);
-    console.log(`📲 OTP for ${phoneNo}: ${otp}`);
+    // ✅ Build response payload
+    const result = {
+      message: "OTP sent successfully",
+      phoneNo,
+    };
 
-    res.status(200).json(
-      ApiResponse.success(
-        {
-          message: "OTP sent successfully",
-          phoneNo,
-          // otp, // ❌ remove in production
-        },
-        1
-      )
-    );
+    // Only attach OTP in non-production mode
+    if (process.env.NODE_ENV !== "production") {
+      result.otp = otp;
+    }
+
+    res.status(200).json(ApiResponse.success(result, 1));
   } catch (err) {
     res
       .status(500)
@@ -91,18 +109,21 @@ exports.verifyOtp = async (req, res) => {
         .json(ApiResponse.error("Invalid or expired OTP", 401));
     }
 
+    const { accessToken, refreshToken } = await generateTokens(existingUser);
+    await Users.saveRefreshToken(existingUser.id, refreshToken);
     // ✅ Issue JWT with userId + phone
-    const userPayload = {
-      id: existingUser.id,
-      phoneNo: existingUser.phoneno,
-    };
-    const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: "7d" });
+    // const userPayload = {
+    //   id: existingUser.id,
+    //   phoneNo: existingUser.phoneno,
+    // };
+    // const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: "7d" });
 
     res.status(200).json(
       ApiResponse.success(
         {
           message: "OTP verified successfully",
-          token,
+          token: accessToken,
+          refreshToken,
           user: existingUser,
         },
         1
@@ -112,5 +133,82 @@ exports.verifyOtp = async (req, res) => {
     res
       .status(500)
       .json(ApiResponse.error(`Error verifying OTP: ${err.message}`, 500));
+  }
+};
+
+/**
+ * Refresh Access Token (with rotation)
+ */
+exports.refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res
+        .status(400)
+        .json(ApiResponse.error("Refresh token required", 400));
+    }
+
+    // ✅ Find user by refresh token
+    const user = await Users.findByRefreshToken(refreshToken);
+    if (!user) {
+      return res
+        .status(403)
+        .json(ApiResponse.error("Invalid refresh token", 403));
+    }
+
+    // ✅ Verify refresh token
+    jwt.verify(refreshToken, JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        return res
+          .status(403)
+          .json(ApiResponse.error("Expired or invalid refresh token", 403));
+      }
+
+      // ✅ Generate new tokens
+      const { accessToken, refreshToken: newRefreshToken } =
+        await generateTokens(user);
+
+      // ✅ Rotate: replace old refresh token with new one
+      await Users.updateRefreshToken(user.id, refreshToken, newRefreshToken);
+
+      res.status(200).json(
+        ApiResponse.success(
+          {
+            message: "Token refreshed successfully",
+            accessToken,
+            refreshToken: newRefreshToken,
+          },
+          1
+        )
+      );
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json(ApiResponse.error(`Error refreshing token: ${err.message}`, 500));
+  }
+};
+
+/**
+ * Logout → revoke refresh token
+ */
+exports.logout = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res
+        .status(400)
+        .json(ApiResponse.error("Refresh token required", 400));
+    }
+
+    await Users.removeRefreshToken(refreshToken);
+
+    res
+      .status(200)
+      .json(ApiResponse.success({ message: "Logged out successfully" }, 1));
+  } catch (err) {
+    res
+      .status(500)
+      .json(ApiResponse.error(`Error during logout: ${err.message}`, 500));
   }
 };
