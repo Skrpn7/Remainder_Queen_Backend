@@ -36,8 +36,9 @@ const taskRoutes = require("./routes/task.routes");
 app.use("/api/v1/task", taskRoutes);
 const notificationRoutes = require("./routes/notification.routes");
 app.use("/api/v1/notifications", notificationRoutes);
+const commentRoutes = require("./routes/comments.routes");
+app.use("/api/v1/comments", commentRoutes);
 // Routes
-
 
 process.on("uncaughtException", (err) => {
   console.error("❌ Uncaught Exception:", err);

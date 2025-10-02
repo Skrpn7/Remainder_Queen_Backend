@@ -16,7 +16,7 @@ const generateTokens = async (user) => {
     phoneNo: user.phoneno,
   };
 
-  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" }); // short lived
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" }); //till refresh token// short lived
   const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" }); // long lived
 
   return { accessToken, refreshToken };

@@ -26,25 +26,74 @@ class Task {
   }
 
   // Get all tasks
-  static async getTasks(userPhone, status = null) {
+  // static async getTasks(userPhone, status = null) {
+  //   try {
+  //     const db = getDB();
+  //     let query = `
+  //     SELECT *
+  //     FROM task
+  //     WHERE (Assignee = ? OR AssignTo = ?)
+  //   `;
+  //     const params = [userPhone, userPhone];
+
+  //     if (status) {
+  //       query += " AND Status = ?";
+  //       params.push(status);
+  //     }
+
+  //     query += " ORDER BY CreatedOn DESC";
+
+  //     const [rows] = await db.execute(query, params);
+  //     return rows;
+  //   } catch (error) {
+  //     logger.error(`Error fetching tasks: ${error.message}`);
+  //     throw error;
+  //   }
+  // }
+
+  static async getTasks({ userPhone, search = null, status = null }) {
     try {
       const db = getDB();
       let query = `
-      SELECT * 
-      FROM task
-      WHERE (Assignee = ? OR AssignTo = ?)
+      SELECT 
+        t.*, 
+        JSON_OBJECT('id', u1.id, 'name', u1.name, 'phoneNo', u1.phoneNo) AS Assignee,
+        JSON_OBJECT('id', u2.id, 'name', u2.name, 'phoneNo', u2.phoneNo) AS AssignTo
+      FROM task t
+      LEFT JOIN users u1 ON t.Assignee = u1.phoneNo
+      LEFT JOIN users u2 ON t.AssignTo = u2.phoneNo
+      WHERE (t.Assignee = ? OR t.AssignTo = ?)
     `;
+
       const params = [userPhone, userPhone];
 
       if (status) {
-        query += " AND Status = ?";
+        query += " AND t.Status = ?";
         params.push(status);
       }
 
-      query += " ORDER BY CreatedOn DESC";
+      if (search) {
+        if (/^\d+$/.test(search)) {
+          // If search is only digits, treat it as a phone number
+          query += " AND (t.Assignee = ? OR t.AssignTo = ?)";
+          params.push(search, search);
+        } else {
+          // Otherwise, treat it as title search
+          query += " AND t.Title LIKE ?";
+          params.push(`%${search}%`);
+        }
+      }
+
+      query += " ORDER BY t.CreatedOn DESC";
 
       const [rows] = await db.execute(query, params);
-      return rows;
+
+      // Parse JSON fields into objects
+      return rows.map((row) => ({
+        ...row,
+        Assignee: row.Assignee ? JSON.parse(row.Assignee) : null,
+        AssignTo: row.AssignTo ? JSON.parse(row.AssignTo) : null,
+      }));
     } catch (error) {
       logger.error(`Error fetching tasks: ${error.message}`);
       throw error;
@@ -52,11 +101,42 @@ class Task {
   }
 
   // Get task by ID
+  // static async getTaskById(id) {
+  //   try {
+  //     const db = getDB();
+  //     const [rows] = await db.execute(`SELECT * FROM task WHERE id = ?`, [id]);
+  //     return rows[0] || null;
+  //   } catch (error) {
+  //     logger.error(`Error fetching task by ID: ${error.message}`);
+  //     throw error;
+  //   }
+  // }
+
+  // Get task by ID
   static async getTaskById(id) {
     try {
       const db = getDB();
-      const [rows] = await db.execute(`SELECT * FROM task WHERE id = ?`, [id]);
-      return rows[0] || null;
+      const query = `
+      SELECT 
+        t.*, 
+        JSON_OBJECT('id', u1.id, 'name', u1.name, 'phoneNo', u1.phoneNo) AS Assignee,
+        JSON_OBJECT('id', u2.id, 'name', u2.name, 'phoneNo', u2.phoneNo) AS AssignTo
+      FROM task t
+      LEFT JOIN users u1 ON t.Assignee = u1.phoneNo
+      LEFT JOIN users u2 ON t.AssignTo = u2.phoneNo
+      WHERE t.id = ?
+    `;
+
+      const [rows] = await db.execute(query, [id]);
+
+      if (!rows.length) return null;
+
+      const row = rows[0];
+      return {
+        ...row,
+        Assignee: row.Assignee ? JSON.parse(row.Assignee) : null,
+        AssignTo: row.AssignTo ? JSON.parse(row.AssignTo) : null,
+      };
     } catch (error) {
       logger.error(`Error fetching task by ID: ${error.message}`);
       throw error;

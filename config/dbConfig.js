@@ -73,6 +73,43 @@ async function initDB() {
   );
 `);
 
+    // Comments Table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS comments (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          task_id INT NOT NULL,
+          user_phone VARCHAR(20) NOT NULL,
+          content TEXT,
+
+          parent_id INT DEFAULT NULL, -- reply support
+          created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+          CONSTRAINT fk_comment_task FOREIGN KEY (task_id) REFERENCES task(id) ON DELETE CASCADE,
+          CONSTRAINT fk_comment_user FOREIGN KEY (user_phone) REFERENCES users(phoneno) ON DELETE CASCADE,
+          CONSTRAINT fk_comment_parent FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+        );
+      `);
+
+    // General Attachments Table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS attachments (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          entity_type ENUM('comment','task','user') NOT NULL, -- what this file belongs to
+          entity_id INT NOT NULL,                             -- id of that entity
+          file_url TEXT NOT NULL,                             -- storage URL or local path
+          file_type VARCHAR(50),                              -- MIME type
+          file_size BIGINT,                                   -- size in bytes
+          uploaded_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+          -- Foreign key for comment (optional, enforced when entity_type = 'comment')
+          CONSTRAINT fk_attachment_comment FOREIGN KEY (entity_id)
+            REFERENCES comments(id) ON DELETE CASCADE
+            -- Can't dynamically enforce multiple entity FKs in MySQL, 
+            -- but this keeps comment attachments safe
+        );
+      `);
+
     console.log("✅ Users table ready.");
 
     return pool;

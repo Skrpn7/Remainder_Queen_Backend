@@ -65,8 +65,14 @@ exports.getTasks = async (req, res) => {
     if (!req.user?.phoneNo) {
       return res.status(401).json(ApiResponse.error("Unauthorized", 401));
     }
+    const { search, status } = req.query;
 
-    const tasks = await Task.getTasks(req.user.phoneNo);
+    const tasks = await Task.getTasks({
+      userPhone: req.user.phoneNo,
+      search: search || null,
+      status: status || null,
+    });
+    // const tasks = await Task.getTasks(req.user.phoneNo);
 
     res.json(ApiResponse.success(tasks, tasks.length, 200));
   } catch (error) {
