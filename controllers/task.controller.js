@@ -38,7 +38,7 @@ exports.createTask = async (req, res) => {
       console.log(`Assigner user: ${JSON.stringify(assignerUser)}`);
       console.log(`Assignee push token: ${assigntoPushToken}`);
 
-      if (assigneePushToken && assignerUser) {
+      if (assigntoPushToken && assignerUser) {
         await NotificationService.sendTaskAssignmentNotification(
           assigntoPushToken,
           assignerUser.name || assignee,
