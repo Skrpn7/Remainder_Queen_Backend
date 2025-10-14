@@ -52,7 +52,7 @@ class Comment {
         user:
           row.user && typeof row.user === "string"
             ? JSON.parse(row.user)
-            : null,
+            : row.user || null,
       }));
     } catch (error) {
       logger.error(`Error fetching comments for task: ${error.message}`);
@@ -81,7 +81,10 @@ class Comment {
       const row = rows[0];
       return {
         ...row,
-        user: row.user && typeof row.user === "string"? JSON.parse(row.user) : null,
+        user:
+          row.user && typeof row.user === "string"
+            ? JSON.parse(row.user)
+            : row.user || null,
       };
     } catch (error) {
       logger.error(`Error fetching comment by ID: ${error.message}`);
