@@ -104,18 +104,37 @@ class Task {
   // static async getTaskById(id) {
   //   try {
   //     const db = getDB();
-  //     const [rows] = await db.execute(`SELECT * FROM task WHERE id = ?`, [id]);
-  //     return rows[0] || null;
+  //     const query = `
+  //     SELECT
+  //       t.*,
+  //       JSON_OBJECT('id', u1.id, 'name', u1.name, 'phoneNo', u1.phoneNo) AS Assignee,
+  //       JSON_OBJECT('id', u2.id, 'name', u2.name, 'phoneNo', u2.phoneNo) AS AssignTo
+  //     FROM task t
+  //     LEFT JOIN users u1 ON t.Assignee = u1.phoneNo
+  //     LEFT JOIN users u2 ON t.AssignTo = u2.phoneNo
+  //     WHERE t.id = ?
+  //   `;
+
+  //     const [rows] = await db.execute(query, [id]);
+
+  //     if (!rows.length) return null;
+
+  //     const row = rows[0];
+  //     return {
+  //       ...row,
+  //       Assignee: row.Assignee ? JSON.parse(row.Assignee) : null,
+  //       AssignTo: row.AssignTo ? JSON.parse(row.AssignTo) : null,
+  //     };
   //   } catch (error) {
   //     logger.error(`Error fetching task by ID: ${error.message}`);
   //     throw error;
   //   }
   // }
 
-  // Get task by ID
   static async getTaskById(id) {
     try {
       const db = getDB();
+
       const query = `
       SELECT 
         t.*, 
@@ -128,14 +147,23 @@ class Task {
     `;
 
       const [rows] = await db.execute(query, [id]);
-
       if (!rows.length) return null;
 
       const row = rows[0];
+
+      const [fileRows] = await db.execute(
+        `SELECT id, FileName, FileURL, FileType 
+       FROM task_files 
+       WHERE TaskID = ? 
+       ORDER BY UploadedOn DESC`,
+        [id]
+      );
+
       return {
         ...row,
         Assignee: row.Assignee ? JSON.parse(row.Assignee) : null,
         AssignTo: row.AssignTo ? JSON.parse(row.AssignTo) : null,
+        Files: fileRows || [],
       };
     } catch (error) {
       logger.error(`Error fetching task by ID: ${error.message}`);

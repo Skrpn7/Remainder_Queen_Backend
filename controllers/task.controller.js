@@ -17,6 +17,12 @@ exports.createTask = async (req, res) => {
         .json(ApiResponse.error("fill the required fields", 400));
     }
 
+    if (assignee === assignTo) {
+      return res
+        .status(400)
+        .json(ApiResponse.error("Cannot assign a task to yourself", 400));
+    }
+
     const task = await Task.createTask(
       title,
       description || null,
@@ -27,14 +33,14 @@ exports.createTask = async (req, res) => {
 
     // Send push notification to assignee
     try {
-      const assigneePushToken = await Users.getUserPushToken(assignTo);
+      const assigntoPushToken = await Users.getUserPushToken(assignTo);
       const assignerUser = await Users.getUserByPhone(assignee);
       console.log(`Assigner user: ${JSON.stringify(assignerUser)}`);
-      console.log(`Assignee push token: ${assigneePushToken}`);
+      console.log(`Assignee push token: ${assigntoPushToken}`);
 
       if (assigneePushToken && assignerUser) {
         await NotificationService.sendTaskAssignmentNotification(
-          assigneePushToken,
+          assigntoPushToken,
           assignerUser.name || assignee,
           title,
           task.id
@@ -218,8 +224,8 @@ exports.updateTaskStatus = async (req, res) => {
 
     const userPhone = req.user.phoneNo;
     if (
-      existingTask.Assignee !== userPhone &&
-      existingTask.AssignTo !== userPhone
+      existingTask.Assignee.phoneNo !== userPhone &&
+      existingTask.AssignTo.phoneNo !== userPhone
     ) {
       return res.status(403).json(ApiResponse.error("Access denied", 403));
     }
@@ -229,14 +235,14 @@ exports.updateTaskStatus = async (req, res) => {
     // Send push notification to task creator
     try {
       const assignerPushToken = await Users.getUserPushToken(
-        existingTask.Assignee
+        existingTask.Assignee.phoneNo
       );
       const assigneeUser = await Users.getUserByPhone(updatedBy);
 
       if (
         assignerPushToken &&
         assigneeUser &&
-        existingTask.Assignee !== updatedBy
+        existingTask.Assignee.phoneNo  !== updatedBy
       ) {
         if (status === "Completed") {
           await NotificationService.sendTaskCompletionNotification(

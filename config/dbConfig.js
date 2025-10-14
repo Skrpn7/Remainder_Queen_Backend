@@ -93,20 +93,16 @@ async function initDB() {
 
     // General Attachments Table
     await pool.query(`
-        CREATE TABLE IF NOT EXISTS attachments (
+                CREATE TABLE IF NOT EXISTS task_files (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          entity_type ENUM('comment','task','user') NOT NULL, -- what this file belongs to
-          entity_id INT NOT NULL,                             -- id of that entity
-          file_url TEXT NOT NULL,                             -- storage URL or local path
-          file_type VARCHAR(50),                              -- MIME type
-          file_size BIGINT,                                   -- size in bytes
-          uploaded_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-          -- Foreign key for comment (optional, enforced when entity_type = 'comment')
-          CONSTRAINT fk_attachment_comment FOREIGN KEY (entity_id)
-            REFERENCES comments(id) ON DELETE CASCADE
-            -- Can't dynamically enforce multiple entity FKs in MySQL, 
-            -- but this keeps comment attachments safe
+          TaskID INT NOT NULL,
+          UploadedBy VARCHAR(20) NOT NULL, -- phoneNo of uploader
+          FileName VARCHAR(255) NOT NULL,
+          FileURL VARCHAR(500) NOT NULL,
+          FileType VARCHAR(100),
+          FileSize BIGINT,
+          UploadedOn DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (TaskID) REFERENCES task(id) ON DELETE CASCADE
         );
       `);
 

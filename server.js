@@ -38,6 +38,10 @@ const notificationRoutes = require("./routes/notification.routes");
 app.use("/api/v1/notifications", notificationRoutes);
 const commentRoutes = require("./routes/comments.routes");
 app.use("/api/v1/comments", commentRoutes);
+const fileRoutes = require("./routes/file.routes");
+app.use("/api/v1/files", fileRoutes );
+
+
 // Routes
 
 process.on("uncaughtException", (err) => {

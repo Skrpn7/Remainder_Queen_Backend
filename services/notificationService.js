@@ -1,7 +1,6 @@
 const { Expo } = require("expo-server-sdk");
 const logger = require("../logger");
 
-// Create a new Expo SDK client
 const expo = new Expo();
 
 class NotificationService {

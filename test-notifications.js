@@ -6,7 +6,8 @@ async function testPushNotifications() {
 
   // Test 1: Send a simple push notification
   console.log("Test 1: Sending simple push notification");
-  const testToken = "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"; // Replace with actual token
+  const testToken = "ExponentPushToken[tZDUsaJDlUBeQbr6w4u-FV]";
+  // Replace with actual token
 
   try {
     const result = await NotificationService.sendPushNotification(
