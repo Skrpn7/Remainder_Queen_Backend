@@ -89,10 +89,21 @@ class Task {
       const [rows] = await db.execute(query, params);
 
       // Parse JSON fields into objects
+      // return rows.map((row) => ({
+      //   ...row,
+      //   Assignee: row.Assignee ? JSON.parse(row.Assignee) : null,
+      //   AssignTo: row.AssignTo ? JSON.parse(row.AssignTo) : null,
+      // }));
       return rows.map((row) => ({
         ...row,
-        Assignee: row.Assignee ? JSON.parse(row.Assignee) : null,
-        AssignTo: row.AssignTo ? JSON.parse(row.AssignTo) : null,
+        Assignee:
+          row.Assignee && typeof row.Assignee === "string"
+            ? JSON.parse(row.Assignee)
+            : row.Assignee || null,
+        AssignTo:
+          row.AssignTo && typeof row.AssignTo === "string"
+            ? JSON.parse(row.AssignTo)
+            : row.AssignTo || null,
       }));
     } catch (error) {
       logger.error(`Error fetching tasks: ${error.message}`);
