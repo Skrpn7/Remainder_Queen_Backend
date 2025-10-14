@@ -172,8 +172,14 @@ class Task {
 
       return {
         ...row,
-        Assignee: row.Assignee ? JSON.parse(row.Assignee) : null,
-        AssignTo: row.AssignTo ? JSON.parse(row.AssignTo) : null,
+        Assignee:
+          row.Assignee && typeof row.Assignee === "string"
+            ? JSON.parse(row.Assignee)
+            : row.Assignee || null,
+        AssignTo:
+          row.AssignTo && typeof row.AssignTo === "string"
+            ? JSON.parse(row.AssignTo)
+            : row.AssignTo || null,
         Files: fileRows || [],
       };
     } catch (error) {
